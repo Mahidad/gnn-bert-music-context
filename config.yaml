@@ -1,0 +1,9 @@
+task1:
+  model_name: distilbert-base-uncased   # swap to bert-base-uncased for your final run
+  num_tags: 50                          # top-K most frequent aspect tags used as labels
+  max_length: 128                       # caption token length cap
+  batch_size: 16                        # lower to 8 if you hit an out-of-memory error
+  learning_rate: 0.00002
+  epochs: 8
+  dropout: 0.1
+  seed: 42                              # keeps train/val/test split reproducible

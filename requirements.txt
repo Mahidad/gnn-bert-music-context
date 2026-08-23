@@ -1,0 +1,12 @@
+# NOTE: torch is intentionally NOT listed here.
+# On Windows, `pip install torch` grabs the CPU-only build, which would
+# make your RTX 4060 sit idle with no error message. Install torch first
+# with the CUDA command in the README, then install this file.
+transformers>=4.30
+datasets>=2.14
+scikit-learn>=1.3
+pandas>=2.0
+numpy>=1.24
+pyyaml>=6.0
+tqdm>=4.65
+matplotlib>=3.7
