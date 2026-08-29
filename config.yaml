@@ -7,3 +7,40 @@ task1:
   epochs: 8
   dropout: 0.1
   seed: 42                              # keeps train/val/test split reproducible
+
+task2:
+  # --- graph construction ---
+  similarity_tau: 0.85         # cosine threshold for "these segments repeat".
+                               # Computed on STANDARDISED features, so the
+                               # usable range is roughly 0.3-0.9, not near 1.0.
+                               # Do not guess this -- run `python tune_tau.py`
+                               # to pick it from your actual data.
+  max_similarity_edges: 60     # cap on similarity PAIRS per graph (each pair is
+                               # stored in both directions, so up to 120 entries
+                               # in edge_index). Stops repetitive tracks from
+                               # becoming near-fully-connected.
+  build_cnn_cache: true        # also cache mel-spectrograms for the CNN baseline
+
+  # --- GNN training ---
+  # With only ~700 training graphs the GNN overfits hard: train accuracy
+  # reaches 98% while validation sits near 45% and val loss climbs. The
+  # settings below are deliberately heavy on regularisation.
+  hidden_dim: 64               # was 128; fewer parameters to memorise with
+  num_layers: 2                # 2 hops; deeper causes over-smoothing
+  dropout: 0.5                 # was 0.3
+  edge_dropout: 0.2            # randomly hide 20% of edges each train step
+  batch_size: 32
+  learning_rate: 0.001
+  weight_decay: 0.005          # was 0.0005; 10x stronger L2 penalty
+  epochs: 200                  # upper bound only -- early stopping ends it
+  early_stopping_patience: 25  # stop after 25 epochs with no val-loss gain
+
+  # --- CNN baseline training ---
+  cnn_batch_size: 16
+  cnn_learning_rate: 0.0003
+  cnn_epochs: 40
+
+  # --- splits ---
+  val_frac: 0.1
+  test_frac: 0.2
+  seed: 42

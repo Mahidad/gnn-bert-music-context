@@ -10,8 +10,8 @@ assignment brief:
 | Task | What it does | Dataset | Status |
 |------|---------------|---------|--------|
 | 1 (Easy) | BERT multi-label tag classifier on MusicCaps captions | MusicCaps | done |
-| 2 (Medium) | GNN on GTZAN chroma/segment graphs, genre classification | GTZAN | next |
-| 3 (Hard) | GNN-BERT cross-attention fusion | MusicCaps (paired audio+caption) | later |
+| 2 (Medium) | GNN on GTZAN chroma/segment graphs, genre classification | GTZAN | done |
+| 3 (Hard) | GNN-BERT cross-attention fusion | MusicCaps (paired audio+caption) | next |
 | 4 (Advanced) | Contrastive dual-encoder retrieval | MusicCaps subset | later |
 
 ## Why this dataset choice
@@ -137,9 +137,20 @@ gnn-bert-music-context/
 │   └── splits/             # tag vocabulary + split info (auto-generated)
 ├── src/
 │   ├── data_utils.py       # MusicCaps loading, tag vocab, PyTorch Dataset
-│   └── bert_baseline.py    # BERT model, train/eval loops
+│   ├── bert_baseline.py    # BERT model, train/eval loops
+│   ├── audio_features.py   # segmentation, chroma/MFCC/mel extraction
+│   ├── graph_builder.py    # segment graphs (temporal + similarity edges)
+│   └── gnn_model.py        # GraphSAGE encoder + CNN baseline
 ├── train_task1.py          # entry point for Task 1
 ├── plot_task1_curves.py    # F1-vs-epoch plot for the report
+├── preprocess_task2.py     # GTZAN -> cached graphs (run once)
+├── train_task2.py          # GraphSAGE genre classifier
+├── train_cnn_baseline.py   # baseline B2 for comparison
+├── plot_task2_results.py   # Task 2 curves, confusion matrix, comparison
+├── inspect_graphs.py       # inspect saved .pt graphs
+│   └── split_utils.py      # shared stratified splits + train-only stats
+├── tune_tau.py             # pick similarity_tau from real data
+├── rebuild_graphs.py       # rebuild graphs at a new tau (fast, no re-extract)
 └── results/                 # metrics.json, saved model, plots land here
 ```
 
@@ -188,6 +199,194 @@ most of the tagging power).
   metrics
 - `results/task1_f1_curve.png` -- after running `plot_task1_curves.py`
 - Console output with 5 example predictions vs. ground truth
+
+## Task 2: GNN on music structure graphs
+
+**Goal:** classify GTZAN genre using *only* audio structure -- no text,
+no captions. A track is turned into a graph of its own 3-second
+segments, and a GraphSAGE encoder learns from how those segments relate.
+
+### Getting GTZAN
+
+GTZAN is not bundled here (it is ~1.2 GB). Download it and extract so
+the layout is:
+
+```
+data/raw/gtzan/genres_original/blues/blues.00000.wav
+data/raw/gtzan/genres_original/classical/classical.00000.wav
+... (10 genre folders, 100 tracks each)
+```
+
+Common sources: the Kaggle mirror "GTZAN Dataset - Music Genre
+Classification", or the `marsyas/gtzan` dataset on Hugging Face. Any copy
+works as long as the folder layout above matches.
+
+Known dataset caveats worth stating in your report: GTZAN contains a
+handful of exact duplicate tracks, some mislabelled clips, and at least
+one corrupted file (`jazz.00054.wav`). The preprocessing script skips
+unreadable files and prints how many it skipped -- report that number.
+
+### Running Task 2
+
+```powershell
+pip install -r requirements.txt        # picks up librosa + torch_geometric
+python preprocess_task2.py             # one-time, ~10-20 min for 1000 tracks
+python train_task2.py                  # GraphSAGE genre classifier
+python train_cnn_baseline.py           # baseline B2 for comparison
+python plot_task2_results.py           # curves, confusion matrix, comparison table
+python inspect_graphs.py               # verify the 20 sample .pt graphs
+```
+
+Re-running `preprocess_task2.py` after changing `similarity_tau` or the
+segment settings **overwrites** the cache in `data/processed/`, so any
+ablation over tau means: edit `config.yaml` -> re-run preprocessing ->
+re-run training. Changing `num_layers`, `hidden_dim`, or `epochs` only
+affects training, so those need no re-preprocessing.
+
+
+### Choosing `similarity_tau` (do not skip this)
+
+Similarity edges are computed on **standardised** node features. This
+matters: the raw feature vector mixes scales spanning three orders of
+magnitude (chroma ~0-1, MFCC means ~-400..100, spectral rolloff ~4000).
+Cosine similarity measures the angle between vectors, so those few huge
+dimensions dominate every vector's direction and *all* segment pairs come
+out at ~0.99. The symptom is unmistakable and worth checking for: every
+graph in the dataset ends up with an identical node and edge count, the
+similarity-edge cap is hit by 100% of tracks, and the GNN scores far
+below the CNN baseline because graph topology carries no information at
+all about the track.
+
+Because similarity now runs on standardised features, the meaningful tau
+range is roughly **0.3-0.9**, not near 1.0. Pick it from data:
+
+```powershell
+python tune_tau.py                     # shows the real similarity distribution
+python rebuild_graphs.py --tau 0.6     # rebuild graphs in seconds
+python train_task2.py
+```
+
+`preprocess_task2.py` caches raw features to
+`data/processed/gtzan_features.pt`, so `rebuild_graphs.py` can rebuild the
+whole graph set at a new tau in seconds rather than re-decoding 1,000
+audio files. That makes a tau ablation cheap: rebuild, retrain, record,
+repeat. `rebuild_graphs.py` reuses the existing split file so every tau
+setting is evaluated on the identical test set.
+
+The health check that matters is **variation**: if every graph has the
+same number of similarity edges, the topology is uninformative no matter
+what the mean is. `rebuild_graphs.py` and `inspect_graphs.py` both warn
+when that happens.
+
+### How the graph is built
+
+Each track becomes one graph:
+
+- **Nodes** = overlapping 3-second segments (3 s window, 1.5 s hop), so a
+  30 s GTZAN clip gives ~19 nodes.
+- **Node features (56 dims)** = 12 chroma (harmony) + 20 MFCC means
+  (timbre) + 20 MFCC stds (timbral movement) + 4 spectral statistics
+  (brightness, rolloff, noisiness, energy).
+- **Temporal edges** connect segment *i* to segment *i+1* -- the timeline.
+- **Similarity edges** connect any two non-adjacent segments whose
+  feature cosine similarity exceeds `similarity_tau` -- this is what
+  makes *repetition* (a chorus returning, a riff looping) visible to the
+  model, and it is the structural signal a plain CNN cannot easily see.
+
+Each segment also gets a coarse chord estimate (chroma matched against 24
+major/minor templates). This is **not** a training feature -- it is stored
+as graph metadata so Task 3 can ask "which chord regions did the fusion
+model attend to when predicting this mood?", which is the interpretability
+angle of this project.
+
+### Why these modelling choices
+
+- **GraphSAGE, 2 layers.** SAGEConv implements exactly the update in the
+  brief: concatenate a node's own features with the mean of its
+  neighbours, then transform. Two layers means each segment ends up aware
+  of its neighbours' neighbours. Deeper stacks cause *over-smoothing* --
+  every node converges toward the same vector and segments stop being
+  distinguishable.
+- **Mean pooling readout.** Matches the brief's `g = (1/|V|) sum_i h_i`.
+  The resulting `g` is reused directly as the graph branch of the Task 3
+  fusion model, which is why `GraphSAGEClassifier.encode()` is a separate
+  method.
+- **CrossEntropyLoss, not BCE.** Unlike Task 1's multi-label tagging, a
+  GTZAN track has exactly one genre, so the classes are mutually
+  exclusive.
+- **Per-graph feature standardisation.** Tracks differ hugely in loudness
+  and recording quality; normalising within each track forces the model
+  to learn from *relative* differences between segments rather than
+  absolute recording levels.
+- **Stratified split, fixed seed.** With only 100 tracks per genre, an
+  unstratified random split can badly imbalance the test set and move
+  accuracy by several points on its own.
+- **Train-only normalisation for the CNN.** Mel statistics are computed
+  from training data only. Using whole-dataset statistics would leak
+  test information into training -- exactly what the rubric's "no
+  leakage" criterion targets.
+
+
+### Node features: two views, and why both are needed
+
+Each node carries **112 dimensions** -- the same 56 features expressed twice:
+
+- **Absolute view**: z-scored against dataset-wide statistics computed
+  from the *training split only*. Answers "is this segment bright, loud,
+  dense compared to music in general?" Most genre signal lives here --
+  metal is bright and dense, classical is not.
+- **Relative view**: z-scored against the track's own mean and standard
+  deviation. Answers "how does this segment differ from the rest of THIS
+  song?" Good for spotting internal contrast and repeats.
+
+Similarity edges are always computed from the **relative** view, since
+repetition is a within-track question.
+
+An earlier version of this pipeline used only the relative view, and it
+cost roughly 20 accuracy points. Per-track z-scoring subtracts each
+track's own mean, which erases absolute timbre entirely -- the model was
+left inferring genre purely from within-track contrasts while the CNN
+baseline read absolute values straight off the spectrogram. If you ablate
+this, report it: it is a clean demonstration that a normalisation choice
+can matter more than architecture.
+
+### Overfitting controls
+
+With ~700 training graphs the GNN memorises quickly (train accuracy 98%,
+validation ~45%, validation loss climbing). The current settings push back
+on that:
+
+- `hidden_dim: 64` and `weight_decay: 0.005` -- fewer parameters, stronger
+  L2 penalty.
+- `dropout: 0.5` on hidden units, plus `edge_dropout: 0.2`, which randomly
+  hides a fifth of the edges on every training step. That is dropout for
+  graph *structure*: it stops the model relying on any one track's exact
+  wiring.
+- **Early stopping on validation loss** with `early_stopping_patience: 25`.
+
+The checkpoint is selected by validation **loss**, not macro-F1. On a
+99-track validation set F1 is noisy enough that its peak often lands on a
+badly overfit epoch that guessed luckily -- an earlier run selected epoch
+97, where validation loss was near its worst and test loss came out at
+3.40. Loss reflects calibration as well as correctness, so it is the more
+stable criterion at this dataset size.
+
+### What to expect
+
+GTZAN genre accuracy in the 0.55-0.75 range is normal for models of this
+size. The number that matters for your report is not the absolute
+accuracy but the **GNN vs CNN comparison on the identical split**, plus
+the per-genre confusion matrix (classical and metal are usually easy;
+rock and country are usually confused with everything).
+
+### Outputs
+
+- `data/processed/gtzan_graphs.pt` -- all graphs + genre mapping
+- `data/processed/graph_samples/` -- 20 example `.pt` graphs (a required
+  submission deliverable)
+- `data/splits/task2_splits.json` -- the shared split used by BOTH models
+- `results/task2_metrics.json` -- history, test metrics, confusion matrix
+- `results/task2_cnn_metrics.json` -- baseline results
 
 ## Next steps
 

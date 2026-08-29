@@ -2,6 +2,8 @@
 # On Windows, `pip install torch` grabs the CPU-only build, which would
 # make your RTX 4060 sit idle with no error message. Install torch first
 # with the CUDA command in the README, then install this file.
+
+# --- Task 1 (BERT) ---
 transformers>=4.30
 datasets>=2.14
 scikit-learn>=1.3
@@ -10,3 +12,8 @@ numpy>=1.24
 pyyaml>=6.0
 tqdm>=4.65
 matplotlib>=3.7
+
+# --- Task 2 (GNN on audio graphs) ---
+librosa>=0.10          # audio loading, chroma/MFCC/mel features
+soundfile>=0.12        # audio file backend librosa relies on
+torch_geometric>=2.4   # GraphSAGE / GAT layers, graph batching
