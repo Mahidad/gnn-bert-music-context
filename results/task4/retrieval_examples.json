@@ -1,0 +1,112 @@
+[
+  {
+    "query_caption": "The Pop song features a soft female vocal singing over sustained pulsating synth lead, mellow piano melody, sustained synth brass, punchy kick, claps. tinny wide hi hats and high pitched female vocal ",
+    "correct_clip": "-4NLarMj4xU",
+    "retrieved_top3": [
+      "3KdyWJ6wTOw",
+      "08u-jdwjM74",
+      "mpikDeSk-mM"
+    ],
+    "rank_of_correct": 223,
+    "hit_at_1": false
+  },
+  {
+    "query_caption": "low fidelity audio from a live performance featuring a solo direct input acoustic guitar strumming airy, suspended open chords. Also present are occasional ambient sounds, perhaps papers being shuffle",
+    "correct_clip": "-4SYC2YgzL8",
+    "retrieved_top3": [
+      "G7pD1K3jYg4",
+      "B1ixRtiUJ-U",
+      "sRxUm-ziCBo"
+    ],
+    "rank_of_correct": 222,
+    "hit_at_1": false
+  },
+  {
+    "query_caption": "A children\u2019s choir sings this devotional melody. The song is medium tempo with a steady bass line, drumming rhythm and clapping percussion. The song is black gospel choral music played in front of a l",
+    "correct_clip": "-8C-gydUbR8",
+    "retrieved_top3": [
+      "BkoCi-IZccI",
+      "EtmKuWPpjG0",
+      "oTzTZqDOIt0"
+    ],
+    "rank_of_correct": 544,
+    "hit_at_1": false
+  },
+  {
+    "query_caption": "The Alternative/Indie song features an intimate, widely spread, mixed vocals singing over noisy snare, punchy kick, wide tinny hi hats, electric guitar melody, synth lead melody and groovy bass guitar",
+    "correct_clip": "-BHPu-dPmWQ",
+    "retrieved_top3": [
+      "ZAT2_-x59pY",
+      "On9epzZ_ceI",
+      "GOTy3yhCylw"
+    ],
+    "rank_of_correct": 361,
+    "hit_at_1": false
+  },
+  {
+    "query_caption": "A synth pad is playing a drone sound in the lower mid range. Cymbals are creating atmosphere while a flute/string/brass sound is playing a melody. The whole recording is full of reverb. This song may ",
+    "correct_clip": "-Bu7YaslRW0",
+    "retrieved_top3": [
+      "B9ME0Vcm_xA",
+      "1ls3ectO1F4",
+      "SGF4N3JHF7Y"
+    ],
+    "rank_of_correct": 31,
+    "hit_at_1": false
+  },
+  {
+    "query_caption": "This clip is an electronic guitar instrumental. The tempo is fast with a vigorous, lively electric guitar lead without any instrumentation. The music is rapid,controlled, intense and vigorous with imm",
+    "correct_clip": "-ByoSbgzr4M",
+    "retrieved_top3": [
+      "AUNK8dJzjLo",
+      "E3F9bzeCgTQ",
+      "eiyyoUt64Zc"
+    ],
+    "rank_of_correct": 341,
+    "hit_at_1": false
+  },
+  {
+    "query_caption": "The low quality recording features a R&B song playing on a speaker, judging by the reverberant and boomy sound of it. The song consists of passionate male vocal singing over shimmering hi hats, claps,",
+    "correct_clip": "-M6K3QoHh40",
+    "retrieved_top3": [
+      "OZjpYGdvMX0",
+      "Qe71m678qEU",
+      "muwIU0BHXE0"
+    ],
+    "rank_of_correct": 978,
+    "hit_at_1": false
+  },
+  {
+    "query_caption": "This is an amateur recording of a female voice beatboxing. It is a funny recording. It could be playing in the background of comedic social media content.",
+    "correct_clip": "-NmjCyqIavI",
+    "retrieved_top3": [
+      "Wp5AiCmbQjA",
+      "xuxKtxzq2Cs",
+      "wz-7sy_Rin4"
+    ],
+    "rank_of_correct": 37,
+    "hit_at_1": false
+  },
+  {
+    "query_caption": "This is a classical music piece belonging to the baroque period. The piece is being performed with a harp. There is a catchy tune being played with a positive aura. This piece could suit well as weddi",
+    "correct_clip": "-OUIEnuNd1I",
+    "retrieved_top3": [
+      "sRxUm-ziCBo",
+      "MfKSVJIcDK0",
+      "476vNb6thyM"
+    ],
+    "rank_of_correct": 42,
+    "hit_at_1": false
+  },
+  {
+    "query_caption": "This music is a spirited instrumental. The tempo is fast with an animated Piano harmony, synthesiser  arrangements, synthesised violins, rhythmic digital drums, funky bass lines and electronic sounds.",
+    "correct_clip": "-Q9MTRXS4bE",
+    "retrieved_top3": [
+      "4TDtUHo5cSE",
+      "HCCGZh-TxK0",
+      "2xGRCsW6-Bk"
+    ],
+    "rank_of_correct": 138,
+    "hit_at_1": false
+  }
+]
