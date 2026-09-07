@@ -44,3 +44,58 @@ task2:
   val_frac: 0.1
   test_frac: 0.2
   seed: 42
+
+task3:
+  # --- audio -> graph (MusicCaps clips are 10s, not 30s like GTZAN) ---
+  segment_seconds: 1.0         # shorter window so a 10s clip still gives
+  hop_seconds: 0.5             # ~19 nodes, comparable to the GTZAN graphs
+  similarity_tau: 0.3          # carried over from the Task 2 tuning
+  max_similarity_edges: 60
+
+  # --- labels ---
+  num_tags: 50                 # top-K aspect tags, same vocabulary style as Task 1
+                               # so Task 1 and Task 3 numbers are comparable
+
+  # --- text ---
+  model_name: distilbert-base-uncased
+  max_length: 128
+  caption_mode: masked         # masked | unmasked (override with --caption-mode)
+
+  # --- model ---
+  gnn_hidden: 128
+  gnn_layers: 2
+  gnn_dropout: 0.3
+  fusion_dim: 256
+  attn_heads: 4
+  dropout: 0.3
+
+  # --- training ---
+  batch_size: 16
+  bert_lr: 0.00002             # small LR: BERT is pretrained, nudge it gently
+  head_lr: 0.0005              # larger LR: GNN + fusion head start from scratch
+  weight_decay: 0.01
+  epochs: 30
+  early_stopping_patience: 6
+
+  # --- splits ---
+  val_frac: 0.1
+  test_frac: 0.2
+  seed: 42
+
+task4:
+  embed_dim: 256               # shared audio/text space
+  gnn_hidden: 128
+  gnn_layers: 2
+  gnn_dropout: 0.3
+  dropout: 0.1
+  init_temperature: 0.07       # CLIP's starting value; learned from here
+
+  batch_size: 32               # every other clip in the batch is a negative,
+                               # so bigger batches give harder negatives and a
+                               # sharper signal. Raise it if VRAM allows;
+                               # --freeze-bert frees a lot of room.
+  bert_lr: 0.00001
+  head_lr: 0.0005
+  weight_decay: 0.01
+  epochs: 40
+  early_stopping_patience: 8

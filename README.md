@@ -11,8 +11,8 @@ assignment brief:
 |------|---------------|---------|--------|
 | 1 (Easy) | BERT multi-label tag classifier on MusicCaps captions | MusicCaps | done |
 | 2 (Medium) | GNN on GTZAN chroma/segment graphs, genre classification | GTZAN | done |
-| 3 (Hard) | GNN-BERT cross-attention fusion | MusicCaps (paired audio+caption) | next |
-| 4 (Advanced) | Contrastive dual-encoder retrieval | MusicCaps subset | later |
+| 3 (Hard) | GNN-BERT cross-attention fusion | MusicCaps (paired audio+caption) | done |
+| 4 (Advanced) | Contrastive dual-encoder retrieval | MusicCaps | done |
 
 ## Why this dataset choice
 
@@ -140,7 +140,10 @@ gnn-bert-music-context/
 │   ├── bert_baseline.py    # BERT model, train/eval loops
 │   ├── audio_features.py   # segmentation, chroma/MFCC/mel extraction
 │   ├── graph_builder.py    # segment graphs (temporal + similarity edges)
-│   └── gnn_model.py        # GraphSAGE encoder + CNN baseline
+│   ├── gnn_model.py        # GraphSAGE encoder + CNN baseline
+│   ├── fusion_model.py     # Task 3 fusion variants + cross-attention
+│   ├── musiccaps_data.py   # MusicCaps pairing, tag vocab, caption masking
+│   └── contrastive.py      # Task 4 dual-encoder, InfoNCE, retrieval metrics
 ├── train_task1.py          # entry point for Task 1
 ├── plot_task1_curves.py    # F1-vs-epoch plot for the report
 ├── preprocess_task2.py     # GTZAN -> cached graphs (run once)
@@ -151,6 +154,12 @@ gnn-bert-music-context/
 │   └── split_utils.py      # shared stratified splits + train-only stats
 ├── tune_tau.py             # pick similarity_tau from real data
 ├── rebuild_graphs.py       # rebuild graphs at a new tau (fast, no re-extract)
+├── download_musiccaps.py   # fetch MusicCaps audio from YouTube (resumable)
+├── preprocess_task3.py     # MusicCaps audio -> paired graphs
+├── train_task3.py          # one fusion variant / caption condition
+├── run_task3_ablation.py   # full ablation grid + comparison table
+├── analyze_task3.py        # graph reliance test, per-tag AP, t-SNE, case studies
+├── train_task4.py          # contrastive dual-encoder + retrieval + zero-shot
 └── results/                 # metrics.json, saved model, plots land here
 ```
 
@@ -387,6 +396,252 @@ rock and country are usually confused with everything).
 - `data/splits/task2_splits.json` -- the shared split used by BOTH models
 - `results/task2_metrics.json` -- history, test metrics, confusion matrix
 - `results/task2_cnn_metrics.json` -- baseline results
+
+
+## Task 3: GNN-BERT fusion
+
+**Goal:** predict multi-label music context (top-50 MusicCaps aspect tags)
+from a caption and an audio structure graph of the *same* clip, and
+determine whether fusing the two beats either one alone.
+
+### Getting the data
+
+MusicCaps ships captions and tags but no audio -- only YouTube IDs. The
+downloader fetches just the labelled 10-second window of each video:
+
+```powershell
+pip install yt-dlp imageio-ffmpeg
+python download_musiccaps.py --limit 20     # trial run, check success rate
+python download_musiccaps.py --all          # ~1 hour, ~2.4 GB
+```
+
+It is resumable, and `imageio-ffmpeg` supplies a bundled ffmpeg so no
+system install is needed. Expect roughly 20% of clips to fail -- videos get
+deleted, privated or region-blocked. This attrition is a known property of
+MusicCaps; the script logs the failed IDs so the count can be reported.
+
+### Running Task 3
+
+```powershell
+python preprocess_task3.py                          # audio -> graphs, once
+python run_task3_ablation.py                        # full grid + table
+```
+
+or one configuration at a time:
+
+```powershell
+python train_task3.py --variant cross_attention
+python train_task3.py --variant bert_only --caption-mode unmasked
+```
+
+
+### If your machine shuts down during training
+
+Sustained GPU load can trip a laptop's thermal or power protection. A
+sudden power-off with no traceback and no blue screen is a hardware
+cutoff, not a software crash. Mitigations, cheapest first:
+
+```powershell
+python train_task3.py --variant cross_attention --amp
+python train_task3.py --variant cross_attention --amp --batch-size 8
+python train_task3.py --variant cross_attention --freeze-bert
+```
+
+- `--amp` uses mixed precision: the same work finishes sooner, so the GPU
+  spends less time at full load and generates less heat.
+- `--batch-size 8` lowers peak power draw per step.
+- `--max-length 64` roughly halves BERT's compute (attention cost grows
+  with sequence length). Check `preprocess_task3.py` output first -- if
+  most captions are under 64 tokens, this costs almost nothing.
+- `--freeze-bert` trains only the GNN, fusion block and head. Much lighter
+  and several times faster. Fine for a first pass, but report final numbers
+  with BERT unfrozen if you can, and state it if you cannot.
+
+All of these also work on `run_task3_ablation.py`, which passes them
+straight through.
+
+**Training is resumable.** A checkpoint is written after every epoch, so a
+crash costs one epoch rather than the whole run -- just re-run the same
+command and it continues where it stopped. Use `--no-resume` to start
+fresh. The resume file is deleted automatically when a run finishes.
+
+Also worth doing on the machine itself: use the original charger rather
+than battery or a lower-wattage USB-C adapter, raise the laptop so the
+underside vents are clear, set Windows to Balanced power mode while
+training, and watch GPU temperature with HWiNFO64 -- sustained readings
+above about 87 C point to thermal cutoff as the cause.
+
+### The masked-caption design
+
+Task 1 revealed that MusicCaps aspect tags are largely lifted verbatim
+from the caption: a caption reading "the song is slow tempo" carries the
+tag `slow tempo` word for word. A text model can therefore score well by
+phrase-matching rather than understanding music -- and if the text branch
+can simply copy the answer, the graph branch has nothing left to add and
+the fusion ablation measures nothing at all.
+
+Task 3 therefore runs two conditions:
+
+- **unmasked** -- captions as written. Measures extraction.
+- **masked** -- tag phrases replaced with `[MASK]` before tokenization, so
+  the text branch must infer the tag from surrounding description.
+  Measures understanding.
+
+The gap between BERT-only in the two conditions quantifies how large the
+extraction shortcut was. Masking is applied at training time, not during
+preprocessing, so switching conditions costs seconds.
+
+Masking is not airtight: a caption whose tag is `instrumental music` but
+whose text says "an instrumental" survives phrase-level masking.
+`--aggressive-mask` additionally removes the constituent words of
+multi-word tags, at the cost of leaving captions less fluent (itself a
+confound, since BERT is pretrained on fluent text). Report masking as a
+reduction in leakage rather than its elimination; `preprocess_task3.py`
+prints the exact statistics.
+
+
+### Model selection and thresholds (multi-label is different)
+
+Task 2 selected checkpoints on validation loss. That is the wrong
+criterion here, and the difference is worth understanding.
+
+With 50 tags, most tags are absent from most clips, so BCE loss is
+dominated by the sea of negatives and penalises the model for growing
+confident. Macro-F1 at a fixed 0.5 cutoff rewards exactly that drift. In
+a real run, validation loss bottomed at epoch 6 while validation macro-F1
+kept climbing to epoch 12 -- the two criteria disagreed by eight F1
+points.
+
+AUC-PR settles it. It is threshold-free: it measures whether the model
+RANKS the correct tags highest, independent of where the cut is made. In
+that same run AUC-PR peaked at epoch 6 alongside loss, showing the later
+F1 gains came from confidence drifting past a fixed threshold rather than
+from better understanding. `--select-by auc_pr` is therefore the default.
+
+The threshold itself is then tuned per tag on validation and applied
+unchanged to test. A tag present in 40% of clips and one present in 2%
+should not share a decision boundary -- forcing them to discards
+performance the model already earned. Every result file records both the
+fixed-0.5 and tuned numbers, and the ablation table shows both columns.
+
+Fitting thresholds on validation and applying them to test is standard;
+fitting them on test would be leakage, and the code never does it.
+
+### Fusion variants
+
+All four live in one class so the ablation compares fusion strategy and
+nothing else -- identical encoders, identical head, identical training loop.
+
+| Variant | Computation | What it tests |
+|---|---|---|
+| `bert_only` | `y = W t` | text alone (Task 1 control) |
+| `gnn_only` | `y = W g` | structure alone (Task 2 control) |
+| `concat` | `y = W [g ; t]` | stapled together, no interaction |
+| `cross_attention` | `y = W [g ; Attn(g, H_text)]` | structure queries the text |
+
+Cross-attention builds a query from the graph vector and attends over
+every caption token, so the model can ask "given this song's structure,
+which words in the description matter?" Padding tokens are masked out of
+the attention scores -- without that, weight spreads onto `[PAD]`
+positions and dilutes the summary.
+
+### Design notes
+
+- **Two learning rates.** BERT arrives pretrained and needs only nudging
+  (`bert_lr: 2e-5`); the GNN, attention block and head start from random
+  initialisation and need to move fast (`head_lr: 5e-4`). A single shared
+  rate either damages BERT's pretrained weights or leaves the new modules
+  barely trained.
+- **Shorter segments than Task 2.** MusicCaps clips are 10s, not 30s, so a
+  1s window with 0.5s hop keeps ~19 nodes per graph -- the same graph size
+  as GTZAN, so the two tasks stay comparable.
+- **AUC-PR over present tags only.** A tag with zero positives in a split
+  has an undefined precision-recall curve; including it would silently
+  drag the mean toward zero.
+- **Random split, not stratified.** Multi-label data has no single class to
+  stratify on. Iterative stratification would balance rare tags better --
+  noted as a limitation rather than papered over.
+
+
+### Analysis and the graph reliance test
+
+```powershell
+python analyze_task3.py                        # masked condition
+python analyze_task3.py --caption-mode unmasked
+```
+
+This produces the two remaining Task 3 deliverables (t-SNE of z, and three
+attention/chord case studies) plus two diagnostics that matter when fusion
+does not beat the text-only baseline:
+
+**Graph reliance test.** The trained fusion model is re-run on test with
+the graph vectors randomly permuted across the batch, so every caption is
+paired with a different track's audio. If the score does not move, the
+model had learned to route around the audio branch entirely -- which
+distinguishes "the audio signal is too weak to help" from "the fusion is
+undertrained". The two call for completely different conclusions, and
+without this test the difference is guesswork. It costs one inference pass
+rather than a retrain.
+
+**Per-tag comparison.** A flat overall result can hide real structure: the
+audio branch may genuinely help on instrumentation or recording-quality
+tags while doing nothing for tags about lyrical themes or performance
+character. Reporting only the aggregate would bury that.
+
+
+## Task 4: contrastive cross-modal retrieval
+
+**Goal:** learn a shared embedding space where a caption and its audio clip
+land near each other, and evaluate retrieval in both directions.
+
+```powershell
+python train_task4.py --amp --batch-size 32
+python train_task4.py --amp --freeze-bert --batch-size 64   # lighter
+```
+
+### Why this task matters after Task 3
+
+Tasks 1-3 asked audio and text to predict the SAME labels, and text won
+every time: MusicCaps captions describe the tags almost directly, so the
+graph had little to add. Retrieval changes the question. The audio encoder
+must place each clip somewhere meaningful in a shared space on its own
+merit -- it cannot free-ride on the caption, because the caption is what it
+has to be matched against. This is the first task where the graph encoder
+stands or falls by itself.
+
+### Design notes
+
+- **Symmetric InfoNCE.** Loss is computed in both directions (caption finds
+  audio, audio finds caption), matching what the retrieval metrics measure.
+- **Learned temperature**, parameterised in log space so it stays positive.
+  A fixed temperature forces a guess about how sharp the similarity
+  distribution should be; learning it lets the model decide. It is clamped
+  to stop the scale exploding early and saturating the softmax.
+- **Batch size matters more here than anywhere else.** Every other clip in
+  the batch is a negative, so larger batches give harder negatives and a
+  sharper signal. `--freeze-bert` frees enough memory to roughly double it.
+- **`drop_last=True`** on the training loader. A final batch of size 1 has
+  no negatives at all and contributes a meaningless zero loss.
+- **Retrieval is scored over the whole test split**, not within batches.
+  Batch-level recall would make the task look far easier than it is -- a
+  16-way choice is not a 1030-way one. The random baseline is printed
+  alongside, so the numbers can be judged honestly.
+- **Unmasked captions.** Masking exists to stop the text branch copying tag
+  phrases when both branches predict the same labels. Here the caption is
+  the query a user would actually type, so masking it would measure the
+  wrong task.
+
+### Zero-shot tagging
+
+Each tag is embedded as a short sentence and clips are ranked by similarity
+to it. The model was never trained on tag labels -- only on caption/audio
+pairs -- so scoring above chance means the shared space captured something
+about musical meaning rather than memorising pairs.
+
+This is deliberately NOT a like-for-like comparison against the Task 3
+supervised model: the supervised model reads the caption at test time,
+while the zero-shot model sees only audio. It measures how much tag
+information the audio embedding alone carries.
 
 ## Next steps
 

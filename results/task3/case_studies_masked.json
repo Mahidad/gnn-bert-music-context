@@ -1,0 +1,430 @@
+[
+  {
+    "ytid": "-4NLarMj4xU",
+    "true_tags": [
+      "emotional",
+      "passionate",
+      "punchy kick",
+      "pop"
+    ],
+    "top5_predicted": [
+      "emotional",
+      "pop",
+      "punchy kick",
+      "easygoing",
+      "low quality"
+    ],
+    "correct_in_top5": [
+      "emotional",
+      "pop",
+      "punchy kick"
+    ],
+    "top_content_words": [
+      [
+        "[MASK]",
+        0.03170589730143547
+      ],
+      [
+        "like",
+        0.030901046469807625
+      ],
+      [
+        "sounds",
+        0.02565912902355194
+      ],
+      [
+        "[MASK]",
+        0.024769918993115425
+      ],
+      [
+        "something",
+        0.024133343249559402
+      ],
+      [
+        "song",
+        0.021889986470341682
+      ],
+      [
+        "melody",
+        0.01782567985355854
+      ],
+      [
+        "hi",
+        0.01762041449546814
+      ],
+      [
+        "sustained",
+        0.017056383192539215
+      ],
+      [
+        "[MASK]",
+        0.016016945242881775
+      ],
+      [
+        "sad",
+        0.015879806131124496
+      ],
+      [
+        "clap",
+        0.01499993447214365
+      ]
+    ],
+    "top_tokens_raw": [
+      [
+        "and",
+        0.05080889165401459
+      ],
+      [
+        ",",
+        0.03867028281092644
+      ],
+      [
+        "the",
+        0.031903669238090515
+      ],
+      [
+        "[MASK]",
+        0.03170589730143547
+      ],
+      [
+        ",",
+        0.03132721036672592
+      ],
+      [
+        "like",
+        0.030901046469807625
+      ],
+      [
+        "sounds",
+        0.02565912902355194
+      ],
+      [
+        "a",
+        0.02556414157152176
+      ],
+      [
+        "on",
+        0.025368569418787956
+      ],
+      [
+        "[MASK]",
+        0.024769918993115425
+      ],
+      [
+        "something",
+        0.024133343249559402
+      ],
+      [
+        "a",
+        0.02308468148112297
+      ]
+    ],
+    "chords": [
+      "D#maj",
+      "D#maj",
+      "D#min",
+      "D#min",
+      "D#min",
+      "Cmin",
+      "Cmin",
+      "G#maj",
+      "G#maj",
+      "G#maj",
+      "G#maj",
+      "D#min",
+      "Fmin",
+      "Fmin",
+      "D#min",
+      "D#min",
+      "Cmin",
+      "F#maj",
+      "Fmaj"
+    ],
+    "dominant_chord": "D#min"
+  },
+  {
+    "ytid": "-ByoSbgzr4M",
+    "true_tags": [
+      "instrumental",
+      "fast tempo",
+      "electric guitar",
+      "rock"
+    ],
+    "top5_predicted": [
+      "instrumental",
+      "fast tempo",
+      "loud",
+      "live performance",
+      "upbeat"
+    ],
+    "correct_in_top5": [
+      "instrumental",
+      "fast tempo"
+    ],
+    "top_content_words": [
+      [
+        "any",
+        0.05264045670628548
+      ],
+      [
+        "[MASK]",
+        0.045067235827445984
+      ],
+      [
+        "instrumentation",
+        0.043777015060186386
+      ],
+      [
+        "clip",
+        0.03282026946544647
+      ],
+      [
+        "instrument",
+        0.032307032495737076
+      ],
+      [
+        "[MASK]",
+        0.027181396260857582
+      ],
+      [
+        "intense",
+        0.023264281451702118
+      ],
+      [
+        "dexter",
+        0.02296825312077999
+      ],
+      [
+        "without",
+        0.022124651819467545
+      ],
+      [
+        "##ity",
+        0.0215140487998724
+      ],
+      [
+        "lead",
+        0.02011406607925892
+      ],
+      [
+        "vigorous",
+        0.019508644938468933
+      ]
+    ],
+    "top_tokens_raw": [
+      [
+        "this",
+        0.07868371158838272
+      ],
+      [
+        "any",
+        0.05264045670628548
+      ],
+      [
+        "is",
+        0.045797668397426605
+      ],
+      [
+        "[MASK]",
+        0.045067235827445984
+      ],
+      [
+        "instrumentation",
+        0.043777015060186386
+      ],
+      [
+        "an",
+        0.03332590311765671
+      ],
+      [
+        "clip",
+        0.03282026946544647
+      ],
+      [
+        "instrument",
+        0.032307032495737076
+      ],
+      [
+        "the",
+        0.027538537979125977
+      ],
+      [
+        "[MASK]",
+        0.027181396260857582
+      ],
+      [
+        "intense",
+        0.023264281451702118
+      ],
+      [
+        "dexter",
+        0.02296825312077999
+      ]
+    ],
+    "chords": [
+      "Cmin",
+      "Cmin",
+      "Cmin",
+      "Cmin",
+      "Cmin",
+      "G#maj",
+      "G#maj",
+      "G#maj",
+      "G#maj",
+      "Dmin",
+      "Fmin",
+      "Fmin",
+      "A#maj",
+      "A#maj",
+      "A#maj",
+      "A#maj",
+      "D#maj",
+      "D#maj",
+      "D#maj"
+    ],
+    "dominant_chord": "Cmin"
+  },
+  {
+    "ytid": "-M6K3QoHh40",
+    "true_tags": [
+      "low quality",
+      "noisy",
+      "passionate",
+      "groovy bass",
+      "shimmering hi hats"
+    ],
+    "top5_predicted": [
+      "low quality",
+      "flat male vocal",
+      "energetic",
+      "shimmering hi hats",
+      "easygoing"
+    ],
+    "correct_in_top5": [
+      "low quality",
+      "shimmering hi hats"
+    ],
+    "top_content_words": [
+      [
+        "like",
+        0.06578405946493149
+      ],
+      [
+        "sounds",
+        0.034929580986499786
+      ],
+      [
+        "judging",
+        0.03250303491950035
+      ],
+      [
+        "consists",
+        0.02503279037773609
+      ],
+      [
+        "features",
+        0.023970456793904305
+      ],
+      [
+        "something",
+        0.02330244705080986
+      ],
+      [
+        "dance",
+        0.016888659447431564
+      ],
+      [
+        "song",
+        0.016450103372335434
+      ],
+      [
+        "partner",
+        0.015751276165246964
+      ],
+      [
+        "[MASK]",
+        0.015549471601843834
+      ],
+      [
+        "recording",
+        0.015101438388228416
+      ],
+      [
+        "[MASK]",
+        0.01503645908087492
+      ]
+    ],
+    "top_tokens_raw": [
+      [
+        "like",
+        0.06578405946493149
+      ],
+      [
+        ",",
+        0.04352559149265289
+      ],
+      [
+        "sounds",
+        0.034929580986499786
+      ],
+      [
+        "it",
+        0.03399071842432022
+      ],
+      [
+        "judging",
+        0.03250303491950035
+      ],
+      [
+        "it",
+        0.028148336336016655
+      ],
+      [
+        "consists",
+        0.02503279037773609
+      ],
+      [
+        "features",
+        0.023970456793904305
+      ],
+      [
+        "something",
+        0.02330244705080986
+      ],
+      [
+        "by",
+        0.023243198171257973
+      ],
+      [
+        "of",
+        0.022442325949668884
+      ],
+      [
+        ",",
+        0.021196991205215454
+      ]
+    ],
+    "chords": [
+      "Dmaj",
+      "Cmaj",
+      "F#min",
+      "F#min",
+      "A#min",
+      "G#min",
+      "G#min",
+      "F#maj",
+      "F#maj",
+      "C#maj",
+      "Fmin",
+      "G#min",
+      "F#maj",
+      "F#maj",
+      "F#min",
+      "F#min",
+      "Gmaj",
+      "F#min",
+      "Bmin"
+    ],
+    "dominant_chord": "F#min"
+  }
+]

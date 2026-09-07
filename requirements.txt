@@ -17,3 +17,7 @@ matplotlib>=3.7
 librosa>=0.10          # audio loading, chroma/MFCC/mel features
 soundfile>=0.12        # audio file backend librosa relies on
 torch_geometric>=2.4   # GraphSAGE / GAT layers, graph batching
+
+# --- Task 3/4 (MusicCaps audio download) ---
+yt-dlp>=2024.1          # fetches the 10s labelled window from YouTube
+imageio-ffmpeg>=0.4.9   # bundles a static ffmpeg binary; no system install needed

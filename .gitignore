@@ -6,3 +6,7 @@ data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 results/*.pt
+*.pt
+*.pth
+*.bin
+*.ckpt
