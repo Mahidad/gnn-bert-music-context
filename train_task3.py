@@ -29,6 +29,7 @@ from torch_geometric.loader import DataLoader
 from transformers import AutoTokenizer
 
 from src.fusion_model import GNNBertFusion, VARIANTS
+from src.io_utils import safe_save
 from src.musiccaps_data import load_metadata, attach_text
 
 PROCESSED = Path("data/processed")
@@ -259,11 +260,11 @@ def main():
         current = selection_score(val_metrics)
         if current > best_score:
             best_score, best_epoch, stale = current, epoch, 0
-            torch.save(model.state_dict(), ckpt)
+            safe_save(model.state_dict(), ckpt)
         else:
             stale += 1
 
-        torch.save({"model": model.state_dict(),
+        safe_save({"model": model.state_dict(),
                     "optimizer": optimizer.state_dict(),
                     "history": history, "best_score": best_score,
                     "best_epoch": best_epoch, "stale": stale, "epoch": epoch},

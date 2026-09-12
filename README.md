@@ -143,7 +143,8 @@ gnn-bert-music-context/
 │   ├── gnn_model.py        # GraphSAGE encoder + CNN baseline
 │   ├── fusion_model.py     # Task 3 fusion variants + cross-attention
 │   ├── musiccaps_data.py   # MusicCaps pairing, tag vocab, caption masking
-│   └── contrastive.py      # Task 4 dual-encoder, InfoNCE, retrieval metrics
+│   ├── contrastive.py      # Task 4 dual-encoder, InfoNCE, retrieval metrics
+│   └── io_utils.py         # atomic, crash-safe checkpoint saving
 ├── train_task1.py          # entry point for Task 1
 ├── plot_task1_curves.py    # F1-vs-epoch plot for the report
 ├── preprocess_task2.py     # GTZAN -> cached graphs (run once)
@@ -630,6 +631,26 @@ stands or falls by itself.
   phrases when both branches predict the same labels. Here the caption is
   the query a user would actually type, so masking it would measure the
   wrong task.
+
+
+### If checkpoint saving fails on Windows
+
+`RuntimeError: File ... cannot be opened` from `torch.save` means Windows
+refused to open the destination for writing -- usually antivirus scanning a
+large checkpoint, a sync client, or a stale handle from a previous run. It
+tends to hit the largest file and only once it already exists.
+
+Checkpoints are written through `src/io_utils.py:safe_save`, which writes
+to a temporary file and then atomically replaces the destination, retrying
+a few times. That fixes the lock problem and also makes saving crash-safe:
+writing directly over an existing checkpoint means a crash mid-write leaves
+a truncated file and destroys the good checkpoint that was there. A failed
+save now warns and continues rather than killing the run.
+
+If it still recurs, add the project folder to Windows Defender exclusions
+(Settings -> Privacy & security -> Virus & threat protection -> Manage
+settings -> Exclusions), and keep the project off OneDrive or any synced
+folder.
 
 ### Zero-shot tagging
 
