@@ -24,6 +24,7 @@ from torch_geometric.loader import DataLoader
 from transformers import AutoTokenizer
 
 from src.contrastive import ContrastiveGNNBert, info_nce_loss, retrieval_metrics
+from src.io_utils import safe_save
 from src.musiccaps_data import load_metadata, attach_text, parse_aspects
 
 PROCESSED = Path("data/processed")
@@ -186,11 +187,11 @@ def main():
 
         if selection > best_score:
             best_score, best_epoch, stale = selection, epoch, 0
-            torch.save(model.state_dict(), ckpt)
+            safe_save(model.state_dict(), ckpt)
         else:
             stale += 1
 
-        torch.save({"model": model.state_dict(), "optimizer": optimizer.state_dict(),
+        safe_save({"model": model.state_dict(), "optimizer": optimizer.state_dict(),
                     "history": history, "best_score": best_score,
                     "best_epoch": best_epoch, "stale": stale, "epoch": epoch},
                    resume_path)
